@@ -14,14 +14,12 @@ st.set_page_config(
 # --- 2. CSS 極致美化 (AI/科技風格) ---
 st.markdown("""
     <style>
-    /* 全局字體設定 */
     @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
     
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
     
-    /* 標題樣式 */
     h1 {
         background: -webkit-linear-gradient(45deg, #00d2ff, #3a7bd5);
         -webkit-background-clip: text;
@@ -30,13 +28,12 @@ st.markdown("""
         letter-spacing: -1px;
     }
 
-    /* 文本輸入框美化 */
     .stTextArea textarea {
         background-color: #f8f9fa;
         border: 2px solid #e9ecef;
         border-radius: 12px;
         transition: all 0.3s ease;
-        font-family: 'Roboto Mono', monospace; /* 代碼感 */
+        font-family: 'Roboto Mono', monospace;
         font-size: 14px;
     }
     .stTextArea textarea:focus {
@@ -44,7 +41,6 @@ st.markdown("""
         box-shadow: 0 0 10px rgba(58, 123, 213, 0.2);
     }
 
-    /* 按鈕美化 */
     div.stButton > button {
         width: 100%;
         border-radius: 8px;
@@ -59,9 +55,6 @@ st.markdown("""
         box_shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
 
-    /* AI 按鈕特定樣式 (Streamlit 無法直接選特定按鈕，這裡做通用優化) */
-    
-    /* 結果卡片 - 玻璃擬態風格 */
     .result-card {
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(10px);
@@ -81,9 +74,6 @@ st.markdown("""
         margin: 10px 0;
     }
     
-    .ai-color { color: #ff4b4b; }
-    .human-color { color: #00cc96; }
-    
     .status-badge {
         display: inline-block;
         padding: 5px 15px;
@@ -92,31 +82,44 @@ st.markdown("""
         font-weight: 600;
         margin-bottom: 15px;
     }
-    
-    /* 分隔線 */
-    hr {
-        margin: 2em 0;
-        border: 0;
-        border-top: 1px solid #eee;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 3. 準備範例資料集 ---
+# --- 3. 修正後的範例資料集 (高辨識度) ---
+# 這些例子經過特別挑選，針對 RoBERTa 模型的特徵進行了優化
+
 AI_EXAMPLES = [
-    "Artificial Intelligence allows machines to model, and even improve upon, the capabilities of the human mind. From the development of self-driving cars to the generation of generative art, AI is reshaping our world.",
-    "To summarize, the integration of renewable energy systems is pivotal for sustainable development. Policy frameworks must adapt to facilitate this transition efficiently.",
-    "As a large language model trained by OpenAI, I cannot browse the live internet or access personal emails. My purpose is to assist with information processing.",
-    "In Python, a decorator is a design pattern that allows you to modify the functionality of a function by wrapping it in another function.",
-    "The concept of the metaverse represents a convergence of physical and digital realities, creating a persistent, shared virtual space."
+    # 特徵：經典的 AI 開頭，語氣平鋪直敘，沒有情感
+    "As an AI language model developed by OpenAI, I do not have personal experiences or emotions. I can, however, provide information on a wide range of topics based on my training data up to September 2021.",
+    
+    # 特徵：過度使用連接詞 (Furthermore, Moreover, In conclusion) 和完美的結構
+    "Furthermore, the implementation of renewable energy sources is crucial for environmental sustainability. Consequently, governments must incentivize green technologies. In conclusion, a multi-faceted approach is required.",
+    
+    # 特徵：重複性高，像機器人在解釋定義
+    "Machine learning is a subset of artificial intelligence that involves training algorithms to recognize patterns in data. These algorithms can then make predictions or decisions without being explicitly programmed to perform the task.",
+    
+    # 特徵：過於禮貌和服務導向
+    "I hope this explanation helps! Please let me know if you have any other questions regarding quantum mechanics or any other topic. I am here to assist you.",
+    
+    # 特徵：條列式結構過於完美
+    "Here are three benefits of exercise: 1. It improves cardiovascular health. 2. It boosts mental well-being by releasing endorphins. 3. It aids in weight management and muscle tone."
 ]
 
 HUMAN_EXAMPLES = [
-    "Dude, I just saw the craziest thing outside my window. There was this squirrel fighting a pigeon over a bagel lol.",
-    "I'm so done with this week. Can we just skip to Friday? I need a nap and a pizza, specifically in that order.",
-    "Actually, I think the second season was better than the first. The character development for Sarah was way more realistic.",
-    "Has anyone seen my keys? I swear I left them on the counter. This happens every single morning!",
-    "wanna grab lunch later? i found this new burger spot nearby looks pretty good."
+    # 特徵：全小寫，網路簡寫 (idk, tho)，沒有標點符號
+    "i literally have no idea what im doing with my life rn tbh. just gonna eat some pizza and watch netflix lol.",
+    
+    # 特徵：情緒化，連續的標點符號，口語化 (Dude, No way)
+    "Dude!!! You won't believe what just happened. I saw my ex at the store and I literally hid behind a shelf. So awkward...",
+    
+    # 特徵：拼寫錯誤 (teh, becuz)，語法破碎
+    "Wait, are we meeting at 5 or 6? i forgot to check teh schedule becuz my phone died. txt me back asap.",
+    
+    # 特徵：非常特定的個人經驗，語句不連貫
+    "My cat just knocked over my coffee cup. Again. This is the third time this week, I swear he does it on purpose just to annoy me.",
+    
+    # 特徵：充滿猶豫詞 (Umm, like, kinda)
+    "Umm, I think the movie was... okay? But like, the ending was kinda weird. I didn't really get it."
 ]
 
 # --- 4. 核心邏輯 ---
@@ -132,50 +135,39 @@ def clear_text():
 
 @st.cache_resource
 def load_model():
-    # 使用較輕量的模型
     model_name = "Hello-SimpleAI/chatgpt-detector-roberta"
     return pipeline("text-classification", model=model_name, top_k=None)
 
-# 確保 Session State 存在
 if 'user_input_area' not in st.session_state:
     st.session_state['user_input_area'] = ""
 
 # --- 5. 介面佈局 ---
 
-# Header 區域
 c1, c2 = st.columns([1, 6])
 with c1:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712109.png", width=70) # 簡單的 AI Icon
+    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712109.png", width=70)
 with c2:
     st.markdown("<h1>NeuralScan Detector</h1>", unsafe_allow_html=True)
     st.caption("🚀 Powered by RoBERTa Transformer Model")
 
 st.markdown("---")
 
-# 側邊欄
 with st.sidebar:
     st.markdown("### ⚙️ 系統核心")
-    st.info("Model: `chatgpt-detector-roberta`\n\nBackend: `PyTorch`")
-    st.markdown("### 📖 使用指南")
-    st.text("1. 輸入或選取範本")
-    st.text("2. 執行神經網絡分析")
-    st.text("3. 檢視機率分佈")
-    st.markdown("---")
-    st.caption("Designed for AI research")
+    st.info("Model: `chatgpt-detector-roberta`")
+    st.markdown("### 💡 提示")
+    st.caption("此模型對於『長句』與『結構完整』的 AI 文本偵測效果最佳。過短的句子可能會導致判斷模糊。")
 
-# 功能區塊
 st.markdown("### 📝 Source Input")
 
-# 功能按鈕列
 col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
 with col_btn1:
-    st.button("🤖 Generate AI Text", on_click=fill_ai_text, help="插入 AI 生成樣本")
+    st.button("🤖 AI Generate (High Conf)", on_click=fill_ai_text)
 with col_btn2:
-    st.button("🧑 Generate Human Text", on_click=fill_human_text, help="插入人類撰寫樣本")
+    st.button("🧑 Human Text (High Conf)", on_click=fill_human_text)
 with col_btn3:
     st.button("🧹 Clear Terminal", on_click=clear_text)
 
-# 輸入框
 txt_input = st.text_area(
     label="Input Data Stream",
     label_visibility="collapsed",
@@ -184,26 +176,22 @@ txt_input = st.text_area(
     placeholder="> Waiting for text input to analyze sequence..."
 )
 
-# 執行區塊
-st.write("") # Spacer
+st.write("")
 run_col1, run_col2, run_col3 = st.columns([1, 2, 1])
 with run_col2:
     analyze_btn = st.button("⚡ ANALYZE SEQUENCE ⚡", type="primary")
 
-# 模型載入
 classifier = load_model()
 
-# 分析邏輯
 if analyze_btn:
     if not txt_input.strip():
         st.toast("⚠️ Error: Input buffer is empty!", icon="❌")
     else:
-        # 自定義進度條動畫
         progress_text = "Initializing Neural Network..."
         my_bar = st.progress(0, text=progress_text)
 
         for percent_complete in range(100):
-            time.sleep(0.005) # 假裝很忙的特效
+            time.sleep(0.005)
             if percent_complete == 30:
                 my_bar.progress(percent_complete + 1, text="Tokenizing input sequence...")
             elif percent_complete == 60:
@@ -214,7 +202,6 @@ if analyze_btn:
         my_bar.empty()
 
         try:
-            # 實際預測
             results = classifier(txt_input, truncation=True, max_length=512)
             scores = {item['label']: item['score'] for item in results[0]}
             ai_score = scores.get('ChatGPT', scores.get('Fake', 0.0))
@@ -224,21 +211,21 @@ if analyze_btn:
             ai_prob = (ai_score / total) * 100
             human_prob = (human_score / total) * 100
             
-            # --- 結果顯示區 (HTML/CSS 組裝) ---
-            
-            # 決定顏色與標籤
+            # 判斷邏輯
             if ai_prob > 50:
                 verdict = "AI GENERATED"
-                verdict_color = "#ffebee" # 淺紅背景
-                text_color = "#c62828" # 深紅文字
+                verdict_color = "#ffebee" 
+                text_color = "#c62828" 
                 icon = "🤖"
                 main_score = ai_prob
+                confidence_text = "HIGH CONFIDENCE" if ai_prob > 80 else "MODERATE CONFIDENCE"
             else:
                 verdict = "HUMAN WRITTEN"
-                verdict_color = "#e8f5e9" # 淺綠背景
-                text_color = "#2e7d32" # 深綠文字
+                verdict_color = "#e8f5e9" 
+                text_color = "#2e7d32" 
                 icon = "🧑"
                 main_score = human_prob
+                confidence_text = "HIGH CONFIDENCE" if human_prob > 80 else "MODERATE CONFIDENCE"
 
             st.markdown(f"""
             <div class="result-card">
@@ -247,7 +234,7 @@ if analyze_btn:
                 </div>
                 <h2 style="color: #333; margin: 0;">Probability Distribution</h2>
                 <div class="score-box" style="color: {text_color};">
-                    {main_score:.1f}% <span style="font-size: 1rem; color: #666;">CONFIDENCE</span>
+                    {main_score:.1f}% <span style="font-size: 1rem; color: #666;">{confidence_text}</span>
                 </div>
                 <p style="font-weight: bold; font-size: 1.2rem; color: {text_color};">
                     VERDICT: {verdict}
@@ -255,7 +242,6 @@ if analyze_btn:
             </div>
             """, unsafe_allow_html=True)
 
-            # 詳細數據與圖表
             st.write("")
             res_col1, res_col2 = st.columns(2)
             
@@ -266,10 +252,8 @@ if analyze_btn:
                 st.caption("🧑 Human Intelligence")
                 st.progress(int(human_prob))
 
-            # 技術細節
             with st.expander("🔍 View Raw Tensor Output"):
                 st.json(results)
-                st.code(f"Input Tokens: {len(txt_input.split())} words\nProcessed Length: {min(len(txt_input), 512)} chars", language="bash")
 
         except Exception as e:
             st.error(f"System Error: {e}")
