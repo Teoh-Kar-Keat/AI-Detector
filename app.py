@@ -1,97 +1,173 @@
 import streamlit as st
 from transformers import pipeline
-import torch
+import random
+import time
 
-# 設定頁面配置
+# --- 1. 頁面設定與 CSS 美化 ---
 st.set_page_config(
-    page_title="AI vs Human 文本偵測器",
-    page_icon="🤖",
-    layout="centered"
+    page_title="AI 文本偵測實驗室",
+    page_icon="🧬",
+    layout="centered",
+    initial_sidebar_state="expanded"
 )
 
-# 快取模型，避免每次重新載入 (Streamlit Cache)
+# 自定義 CSS 來美化按鈕和區塊
+st.markdown("""
+    <style>
+    .stButton>button {
+        width: 100%;
+        border-radius: 10px;
+        height: 3em;
+    }
+    .result-card {
+        padding: 20px;
+        border-radius: 15px;
+        background-color: #f0f2f6;
+        margin-top: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .big-font {
+        font-size: 20px !important;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 2. 準備範例資料集 (模擬資料庫) ---
+# 為了展示效果，這裡選用英文，因為該模型對英文最準確
+AI_EXAMPLES = [
+    "Artificial Intelligence refers to the simulation of human intelligence in machines that are programmed to think like humans and mimic their actions. The term may also be applied to any machine that exhibits traits associated with a human mind such as learning and problem-solving.",
+    "In conclusion, the impact of climate change is undeniable. We must take immediate action to reduce carbon emissions and promote renewable energy sources. Governments, corporations, and individuals all have a role to play in preserving our planet for future generations.",
+    "As an AI language model, I do not have personal feelings or opinions. However, I can provide you with information regarding the topic you are asking about based on the data I have been trained on up until September 2021.",
+    "To implement a binary search tree in Python, you first need to define a Node class. Each node will contain a value, a left child, and a right child. Recursion is typically used for insertion and search operations.",
+    "The intricate dance of celestial bodies has fascinated humanity for millennia. From the ancient astronomers mapping the stars to modern telescopes peering into the depths of the universe, our quest to understand the cosmos is a testament to human curiosity."
+]
+
+HUMAN_EXAMPLES = [
+    "I literally just spilled coffee all over my laptop... ugh, this is the worst start to a Monday ever. Does anyone know a good repair shop in downtown? Pls help!",
+    "I think the movie was okay, but honestly, the ending felt kinda rushed. Like, why did the main character just leave without saying anything? It didn't make sense to me personally.",
+    "Hey guys, just checking in. I won't be able to make it to the meeting tmrw, my kid is sick. I'll catch up on the notes later. Thanks!",
+    "OMG you have to try this new pizza place! The crust is so crispy and the cheese is just... wow. 10/10 would recommend.",
+    "Im not sure if this is the right way to do it, but i usually just wing it and hope for the best. works 60% of the time, every time lol."
+]
+
+# --- 3. 初始化 Session State ---
+# 這一步很重要，用來儲存 Text Area 目前的內容
+if 'user_input' not in st.session_state:
+    st.session_state['user_input'] = ""
+
+# --- 4. 定義功能函數 ---
 @st.cache_resource
 def load_model():
-    # 使用 Hugging Face 上較輕量且熱門的 ChatGPT 偵測模型
     model_name = "Hello-SimpleAI/chatgpt-detector-roberta"
-    
-    # 建立分類 pipeline
-    # return_all_scores=True 會同時回傳 Human 和 AI 的機率
     classifier = pipeline("text-classification", model=model_name, top_k=None)
     return classifier
 
-# 側邊欄資訊
-st.sidebar.title("關於工具")
-st.sidebar.info(
-    "此工具使用 Transformer 模型 (RoBERTa) "
-    "來分析文本的語法與統計特徵，判斷是否由 AI 生成。"
-)
-st.sidebar.warning(
-    "⚠️ 注意：AI 偵測器並非 100% 準確，"
-    "結果僅供參考，請勿作為單一評判標準。"
-)
+def fill_ai_text():
+    st.session_state['user_input'] = random.choice(AI_EXAMPLES)
+
+def fill_human_text():
+    st.session_state['user_input'] = random.choice(HUMAN_EXAMPLES)
+
+def clear_text():
+    st.session_state['user_input'] = ""
+
+# --- 5. 介面佈局 ---
+
+# 側邊欄
+with st.sidebar:
+    st.title("關於本工具")
+    st.info("此工具利用 RoBERTa 模型來分辨文本是由人類撰寫還是 AI 生成。")
+    st.markdown("### 使用指南")
+    st.markdown("1. 輸入文字 或 點擊範例按鈕")
+    st.markdown("2. 點擊「開始偵測」")
+    st.markdown("3. 查看詳細分析結果")
+    st.markdown("---")
+    st.caption("Model: Hello-SimpleAI/chatgpt-detector-roberta")
 
 # 主標題
-st.title("🤖 AI / 🧑 Human 文章偵測器")
-st.markdown("輸入一段文本，AI 將分析其由人類或人工智慧撰寫的可能性。")
+st.title("🧬 AI vs Human 文本鑑識")
+st.markdown("### 🕵️ 貼上文章，立即揭穿真偽")
 
-# 載入模型 (顯示載入中的 spinner)
-with st.spinner("正在載入 AI 偵測模型..."):
-    classifier = load_model()
+# 按鈕區 (使用 Columns 排版)
+col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
 
-# 文本輸入區
-user_input = st.text_area("請在此貼上文章內容 (建議英文效果較佳，中文亦可嘗試)：", height=200)
+with col_btn1:
+    st.button("🤖 隨機 AI 語氣", on_click=fill_ai_text, help="自動填入一段 AI 生成風格的文字")
+with col_btn2:
+    st.button("🧑 隨機人類語氣", on_click=fill_human_text, help="自動填入一段人類口語風格的文字")
+with col_btn3:
+    st.button("🗑️ 清空內容", on_click=clear_text)
 
-if st.button("開始分析"):
-    if not user_input.strip():
-        st.error("請輸入文字內容！")
+# 文字輸入區 (綁定 Session State)
+txt_input = st.text_area(
+    "在此輸入文章內容 (建議英文效果最佳)：",
+    value=st.session_state['user_input'],
+    height=200,
+    key='user_input_area',  # 注意：這裡只是一個 key，實際連動要靠下面的邏輯
+    placeholder="Waiting for input..."
+)
+
+# 讓 text_area 的改變同步回 session_state (為了讓手動輸入也能被記住)
+st.session_state['user_input'] = txt_input
+
+# 載入模型
+classifier = load_model()
+
+# 分析按鈕
+if st.button("🚀 開始偵測", type="primary"):
+    if not txt_input.strip():
+        st.warning("⚠️ 請先輸入文字內容！")
     else:
-        # 進行預測
-        # Truncation=True 確保超過 512 tokens 的長文不會報錯
-        try:
-            results = classifier(user_input, truncation=True, max_length=512)
+        with st.spinner("🧠 AI 正在分析語法特徵..."):
+            # 模擬一點延遲感，增加 UX 體驗
+            time.sleep(0.5) 
             
-            # 解析結果 (結果通常是一個 list 包含 dict)
-            # Hello-SimpleAI 模型的標籤通常是 'Human' 和 'ChatGPT'
-            # 我們需要將其標準化
-            scores = {item['label']: item['score'] for item in results[0]}
-            
-            # 取得各別分數 (處理標籤名稱可能不同的情況)
-            ai_score = scores.get('ChatGPT', scores.get('Fake', 0.0))
-            human_score = scores.get('Human', scores.get('Real', 0.0))
-            
-            # 確保總和為 1 (雖然 softmax 已經做過，但保險起見)
-            total = ai_score + human_score
-            ai_prob = (ai_score / total) * 100
-            human_prob = (human_score / total) * 100
+            try:
+                # 執行預測
+                results = classifier(txt_input, truncation=True, max_length=512)
+                
+                # 處理數據
+                scores = {item['label']: item['score'] for item in results[0]}
+                ai_score = scores.get('ChatGPT', scores.get('Fake', 0.0))
+                human_score = scores.get('Human', scores.get('Real', 0.0))
+                
+                total = ai_score + human_score
+                ai_prob = (ai_score / total) * 100
+                human_prob = (human_score / total) * 100
+                
+                # --- 結果呈現區 ---
+                st.markdown("<div class='result-card'>", unsafe_allow_html=True)
+                
+                st.subheader("📊 分析報告")
+                
+                # 指標卡片
+                m_col1, m_col2 = st.columns(2)
+                with m_col1:
+                    st.metric("🤖 AI 相似度", f"{ai_prob:.1f}%", delta=f"{ai_prob-50:.1f}%" if ai_prob > 50 else None, delta_color="inverse")
+                with m_col2:
+                    st.metric("🧑 人類相似度", f"{human_prob:.1f}%", delta=f"{human_prob-50:.1f}%" if human_prob > 50 else None)
 
-            # --- 顯示結果 ---
-            st.markdown("---")
-            st.subheader("📊 分析結果")
+                # 進度條
+                st.write("") # Spacer
+                st.write("判斷傾向：")
+                if ai_prob > 50:
+                    bar_color = "red"
+                    st.progress(int(ai_prob), text="傾向 AI 生成")
+                else:
+                    bar_color = "green"
+                    st.progress(int(ai_prob), text="傾向人類撰寫")
 
-            # 使用 Streamlit 的 columns 進行排版
-            col1, col2 = st.columns(2)
+                # 文字結論
+                st.write("---")
+                if ai_prob > 80:
+                    st.error("🚨 **極高風險**：這段文字非常有可能是由 AI 生成的。\n\n特徵：語句結構過於完美、缺乏情感波動或使用了常見的 AI 慣用語。")
+                elif ai_prob > 50:
+                    st.warning("⚠️ **中度風險**：這段文字包含 AI 生成的特徵，但也可能是經過潤飾的人類文字。")
+                else:
+                    st.success("✅ **通過驗證**：這段文字看起來很自然，極高機率由人類撰寫。\n\n特徵：包含不規則語法、俚語、強烈的個人語氣或拼寫變化。")
+                
+                st.markdown("</div>", unsafe_allow_html=True)
 
-            with col1:
-                st.metric(label="🤖 AI 可能性", value=f"{ai_prob:.1f}%")
-            with col2:
-                st.metric(label="🧑 人類可能性", value=f"{human_prob:.1f}%")
-
-            # 進度條視覺化
-            st.write("AI 傾向程度：")
-            st.progress(int(ai_prob))
-            
-            # 判斷結論
-            if ai_prob > 80:
-                st.error("🕵️ 結論：這篇文章 **極高機率** 是由 AI 生成的。")
-            elif ai_prob > 50:
-                st.warning("🤔 結論：這篇文章 **可能** 包含 AI 生成的內容。")
-            else:
-                st.success("📝 結論：這篇文章 **極高機率** 是由人類撰寫的。")
-            
-            # 顯示原始數據 (Debug 用，可選)
-            with st.expander("查看原始模型數據"):
-                st.json(results)
-
-        except Exception as e:
-            st.error(f"發生錯誤：{str(e)}")
+            except Exception as e:
+                st.error(f"分析時發生錯誤：{e}")
