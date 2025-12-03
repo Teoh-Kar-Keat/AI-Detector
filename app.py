@@ -91,10 +91,7 @@ st.markdown("""
 AI_EXAMPLES = [
     # 特徵：經典的 AI 開頭，語氣平鋪直敘，沒有情感
     "As an AI language model developed by OpenAI, I do not have personal experiences or emotions. I can, however, provide information on a wide range of topics based on my training data up to September 2021.",
-    
-    # 特徵：過度使用連接詞 (Furthermore, Moreover, In conclusion) 和完美的結構
-    "Furthermore, the implementation of renewable energy sources is crucial for environmental sustainability. Consequently, governments must incentivize green technologies. In conclusion, a multi-faceted approach is required.",
-    
+ 
     # 特徵：重複性高，像機器人在解釋定義
     "Machine learning is a subset of artificial intelligence that involves training algorithms to recognize patterns in data. These algorithms can then make predictions or decisions without being explicitly programmed to perform the task.",
     
@@ -117,9 +114,6 @@ HUMAN_EXAMPLES = [
     
     # 特徵：非常特定的個人經驗，語句不連貫
     "My cat just knocked over my coffee cup. Again. This is the third time this week, I swear he does it on purpose just to annoy me.",
-    
-    # 特徵：充滿猶豫詞 (Umm, like, kinda)
-    "Umm, I think the movie was... okay? But like, the ending was kinda weird. I didn't really get it."
 ]
 
 # --- 4. 核心邏輯 ---
