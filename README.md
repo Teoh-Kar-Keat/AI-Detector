@@ -6,10 +6,10 @@
 在實作方面，我們使用 Python 的 Streamlit 框架快速搭建網頁介面。技術核心是透過 Hugging Face 的 transformers 套件建立自動化推論管線（Pipeline），將使用者輸入的文本轉換為向量進行分析，即時計算出 AI 與人類的機率分佈。為了優化使用者體驗，我們利用 st.session_state 技術解決了元件狀態同步問題，設計了能自動填入「高信心度樣本」的互動按鈕，透過區分充滿拼寫錯誤的人類口語與結構僵化的 AI 慣用語，來驗證模型的準確性。最後，結合自定義 CSS 注入玻璃擬態（Glassmorphism）與霓虹漸層元素，成功將一個單純的分析工具轉化為具備極致科技感的視覺化應用。
 
 
-Streamlit : 
+Streamlit : https://ai-detector-racedom.streamlit.app/
 
 
-GPT對話記錄: 
+GPT對話記錄: https://github.com/Teoh-Kar-Keat/AI-Detector/blob/main/chat.ipynb
 
 
 https://github.com/user-attachments/assets/8e71a708-4f10-41dd-b4ea-315eeca17441
